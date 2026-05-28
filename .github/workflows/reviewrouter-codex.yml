@@ -1,0 +1,27 @@
+name: ReviewRouter Codex OAuth
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  id-token: write
+
+jobs:
+  codex-review:
+    name: codex-review
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    if: ${{ github.event.pull_request.draft == false && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.type != 'Bot' }}
+    permissions:
+      id-token: write
+    steps:
+      - name: ReviewRouter Codex OAuth review
+        id: run_codex
+        uses: 777genius/review-router@fcdbf1043682096a1d3fc77af9e2c201587ad74d
+        with:
+          mode: codex-oauth-rotating
+          api-url: "https://api.reviewrouter.site"
+          provider-instance-id: "codex-rotating:1252762369"
+          workflow-schema-version: "1"
+          auth-json: ${{ secrets.REVIEWROUTER_CODEX_AUTH_JSON }}
