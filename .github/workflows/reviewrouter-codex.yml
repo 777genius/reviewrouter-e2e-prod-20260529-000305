@@ -16,17 +16,16 @@ jobs:
       contents: read
       pull-requests: read
       id-token: write
-    uses: 777genius/review-router/.github/workflows/reviewrouter-t0-reusable.yml@532e693969552229b75ec3a572f96c406f2b535a
+    uses: 777genius/review-router/.github/workflows/reviewrouter-execution-reusable.yml@f39bc8fadc611850aebb1f93ce905fe348c16270
     with:
-      runtime_ref: "532e693969552229b75ec3a572f96c406f2b535a"
+      review_action_lane: newtest-one-shot
+      runtime_ref: "f39bc8fadc611850aebb1f93ce905fe348c16270"
       api_url: "https://api.reviewrouter.site"
       runtime_config_mode: oidc
+      static_runtime_env_json: "{}"
       pr_number: ${{ format('{0}', github.event.pull_request.number) }}
       review_head_sha: ${{ github.event.pull_request.head.sha }}
       provider_instance_id: "hosted-pool:repository:1252762369"
       workflow_schema_version: 2
-      max_changed_lines: ${{ vars.REVIEW_ROUTER_MAX_CHANGED_LINES }}
-      review_timeout_minutes: ${{ fromJSON(vars.REVIEW_ROUTER_TIMEOUT_MINUTES || '60') }}
-      codex_session_mode: codex_subscription_oauth_hosted_pool
-      session_binding_id: "748969d2-cfd9-49da-8d7c-4983faa2dd5a"
-      session_binding_version: 1
+      max_changed_lines: "2000"
+      review_timeout_minutes: 15
