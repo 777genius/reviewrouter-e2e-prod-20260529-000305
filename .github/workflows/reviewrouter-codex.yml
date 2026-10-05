@@ -1,7 +1,7 @@
 name: ReviewRouter Hosted Codex
 
-# Fresh operation for the attestation-qualified native bootstrap 9e65e9c8a64c.
-# Consumed runs 35 and 36 must not be rerun; native metadata binds this new head.
+# Fresh operation for the queue-budget-qualified native bootstrap bd426b3ad906.
+# Consumed runs 35, 36 and 37 must not be rerun; native metadata binds this new head.
 
 run-name: ${{ format('ReviewRouter hosted review PR {0} at {1}', github.event.pull_request.number, github.event.pull_request.head.sha) }}
 
