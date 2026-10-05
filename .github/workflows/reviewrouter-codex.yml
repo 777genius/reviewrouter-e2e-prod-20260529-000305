@@ -1,7 +1,7 @@
 name: ReviewRouter Hosted Codex
 
-# Fresh operation for the diagnostic native bootstrap 0cb104c3ba9b.
-# Consumed runs 35-39 must not be rerun; native metadata binds this new head.
+# Fresh operation with prevalidated native inventory and transport deadline.
+# Consumed runs 35-40 must not be rerun; native metadata binds this new head.
 
 run-name: ${{ format('ReviewRouter hosted review PR {0} at {1}', github.event.pull_request.number, github.event.pull_request.head.sha) }}
 
