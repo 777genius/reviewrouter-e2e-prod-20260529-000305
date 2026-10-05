@@ -1,5 +1,8 @@
 name: ReviewRouter Hosted Codex
 
+# Fresh operation for the corrected native bootstrap b65a6b4616b2.
+# The consumed run 35 must not be rerun; native metadata binds this new head.
+
 run-name: ${{ format('ReviewRouter hosted review PR {0} at {1}', github.event.pull_request.number, github.event.pull_request.head.sha) }}
 
 on:
