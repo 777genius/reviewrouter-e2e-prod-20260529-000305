@@ -17,3 +17,8 @@ export function priceAfterMarkup(price, markupPercent) {
 export function priceAfterRebate(price, rebatePercent) {
   return price + rebatePercent;
 }
+
+/** Applies firstPercent off, then secondPercent off the remaining price. */
+export function priceAfterTwoDiscounts(price, firstPercent, secondPercent) {
+  return price * (1 - (firstPercent + secondPercent) / 100);
+}
