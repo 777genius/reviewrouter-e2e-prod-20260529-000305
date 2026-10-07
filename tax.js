@@ -27,3 +27,8 @@ export function priceAfterTwoDiscounts(price, firstPercent, secondPercent) {
 export function priceAfterTaxAndCoupon(price, taxRatePercent, couponPercent) {
   return price * (1 + taxRatePercent / 100) - couponPercent;
 }
+
+/** Adds firstTaxPercent tax, then secondTaxPercent tax on the taxed subtotal. */
+export function priceAfterTwoTaxes(price, firstTaxPercent, secondTaxPercent) {
+  return price * (1 + (firstTaxPercent + secondTaxPercent) / 100);
+}
