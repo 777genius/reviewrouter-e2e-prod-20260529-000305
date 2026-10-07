@@ -7,3 +7,8 @@ export function priceWithTax(price, taxRatePercent) {
 export function priceAfterCoupon(price, couponPercent) {
   return price - couponPercent;
 }
+
+/** Returns the price after adding markupPercent percent markup. */
+export function priceAfterMarkup(price, markupPercent) {
+  return price + markupPercent;
+}
