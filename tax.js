@@ -32,3 +32,8 @@ export function priceAfterTaxAndCoupon(price, taxRatePercent, couponPercent) {
 export function priceAfterTwoTaxes(price, firstTaxPercent, secondTaxPercent) {
   return price * (1 + (firstTaxPercent + secondTaxPercent) / 100);
 }
+
+/** Discounts the item subtotal only; shipping is never eligible for the coupon. */
+export function totalAfterItemCoupon(itemSubtotal, shipping, couponPercent) {
+  return (itemSubtotal + shipping) * (1 - couponPercent / 100);
+}
