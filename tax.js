@@ -22,3 +22,8 @@ export function priceAfterRebate(price, rebatePercent) {
 export function priceAfterTwoDiscounts(price, firstPercent, secondPercent) {
   return price * (1 - (firstPercent + secondPercent) / 100);
 }
+
+/** Adds percentage tax, then takes couponPercent percent off the taxed price. */
+export function priceAfterTaxAndCoupon(price, taxRatePercent, couponPercent) {
+  return price * (1 + taxRatePercent / 100) - couponPercent;
+}
