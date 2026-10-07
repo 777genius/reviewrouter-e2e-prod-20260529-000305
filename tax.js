@@ -12,3 +12,8 @@ export function priceAfterCoupon(price, couponPercent) {
 export function priceAfterMarkup(price, markupPercent) {
   return price + markupPercent;
 }
+
+/** Returns the price after subtracting rebatePercent percent rebate. */
+export function priceAfterRebate(price, rebatePercent) {
+  return price + rebatePercent;
+}
