@@ -37,3 +37,8 @@ export function priceAfterTwoTaxes(price, firstTaxPercent, secondTaxPercent) {
 export function totalAfterItemCoupon(itemSubtotal, shipping, couponPercent) {
   return (itemSubtotal + shipping) * (1 - couponPercent / 100);
 }
+
+/** Adds the larger of the percentage service fee and the minimum service fee. */
+export function totalWithMinimumServiceFee(subtotal, feePercent, minimumFee) {
+  return subtotal + Math.min(subtotal * feePercent / 100, minimumFee);
+}
