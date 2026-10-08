@@ -20,10 +20,12 @@ export function boxesPerPallet(boxWidth, boxDepth, palletWidth, palletDepth) {
 /** Consecutive shipment allocation, not globally optimal bin packing.
  * @param {ReadonlyArray<number>} boxWeights Positive safe-integer weights.
  * @param {number} maxWeight Positive safe-integer pallet capacity.
+ * @param {number} [maxBoxesPerPallet] Positive safe-integer item capacity; unlimited by default.
  * @returns {number[][]} Original indices, exactly once in shipment order.
  */
-export function allocatePalletsByWeight(boxWeights, maxWeight) {
-  if (!Array.isArray(boxWeights) || !Number.isSafeInteger(maxWeight) || maxWeight <= 0)
+export function allocatePalletsByWeight(boxWeights, maxWeight, maxBoxesPerPallet = Number.MAX_SAFE_INTEGER) {
+  if (!Array.isArray(boxWeights) || !Number.isSafeInteger(maxWeight) || maxWeight <= 0 ||
+      !Number.isSafeInteger(maxBoxesPerPallet) || maxBoxesPerPallet <= 0)
     throw new RangeError("invalid_pallet_weights");
   for (let i = 0; i < boxWeights.length; i++) {
     if (!Object.hasOwn(boxWeights, i) || !Number.isSafeInteger(boxWeights[i]) || boxWeights[i] <= 0 || boxWeights[i] > maxWeight)
@@ -33,7 +35,7 @@ export function allocatePalletsByWeight(boxWeights, maxWeight) {
   let load = 0;
   for (let i = 0; i < boxWeights.length; i++) {
     let pallet = pallets[pallets.length - 1];
-    if (!pallet || boxWeights[i] > maxWeight - load) {
+    if (!pallet || pallet.length >= maxBoxesPerPallet || boxWeights[i] > maxWeight - load) {
       pallet = [];
       pallets.push(pallet);
       load = 0;
