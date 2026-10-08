@@ -23,10 +23,11 @@ export function boxesPerPallet(boxWidth, boxDepth, palletWidth, palletDepth) {
  * @param {number} [maxBoxesPerPallet] Positive safe-integer item capacity; unlimited by default.
  * @param {number} [maxPallets] Positive safe-integer transport slots; unlimited by default.
  * @param {number} [palletTareWeight] Nonnegative safe-integer pallet weight below maxWeight; zero by default.
+ * @param {ReadonlyArray<string>} [deliveryStops] Canonical delivery IDs; each pallet serves one exact ID.
  * Transport capacity applies to the ordered greedy plan, without reordering.
  * @returns {number[][]} Original indices, exactly once in shipment order.
  */
-export function allocatePalletsByWeight(boxWeights, maxWeight, maxBoxesPerPallet = Number.MAX_SAFE_INTEGER, maxPallets = Number.MAX_SAFE_INTEGER, palletTareWeight = 0) {
+export function allocatePalletsByWeight(boxWeights, maxWeight, maxBoxesPerPallet = Number.MAX_SAFE_INTEGER, maxPallets = Number.MAX_SAFE_INTEGER, palletTareWeight = 0, deliveryStops) {
   if (!Array.isArray(boxWeights) || !Number.isSafeInteger(maxWeight) || maxWeight <= 0 ||
       !Number.isSafeInteger(maxBoxesPerPallet) || maxBoxesPerPallet <= 0)
     throw new RangeError("invalid_pallet_weights");
@@ -42,11 +43,20 @@ export function allocatePalletsByWeight(boxWeights, maxWeight, maxBoxesPerPallet
   for (let i = 0; i < boxWeights.length; i++) {
     if (boxWeights[i] > cargoCapacity) throw new RangeError("invalid_pallet_weights");
   }
+  if (deliveryStops !== undefined) {
+    if (!Array.isArray(deliveryStops) || deliveryStops.length !== boxWeights.length)
+      throw new RangeError("invalid_delivery_stops");
+    for (let i = 0; i < deliveryStops.length; i++) {
+      if (!Object.hasOwn(deliveryStops, i) || typeof deliveryStops[i] !== "string" || deliveryStops[i].trim().length === 0)
+        throw new RangeError("invalid_delivery_stops");
+    }
+  }
   const pallets = /** @type {number[][]} */ ([]);
   let load = 0;
   for (let i = 0; i < boxWeights.length; i++) {
     let pallet = pallets[pallets.length - 1];
-    if (!pallet || pallet.length >= maxBoxesPerPallet || boxWeights[i] > cargoCapacity - load) {
+    if (!pallet || pallet.length >= maxBoxesPerPallet || boxWeights[i] > cargoCapacity - load ||
+        (deliveryStops !== undefined && deliveryStops[i] !== deliveryStops[i - 1])) {
       if (pallets.length >= maxPallets)
         throw new RangeError("transport_capacity_exceeded");
       pallet = [];
