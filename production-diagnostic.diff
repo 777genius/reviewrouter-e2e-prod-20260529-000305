@@ -1,0 +1,101 @@
+--- /private/tmp/rr-status-diagnostic-subject-NEWTEST-20261011/baseline/hosted-v4-one-shot-relay.ts	2026-10-11 13:57:48
++++ /private/tmp/rr-status-diagnostic-subject-NEWTEST-20261011/src/hosted-v4-one-shot-relay.ts	2026-10-11 13:57:48
+@@ -1,5 +1,5 @@
+ import { createHash, randomUUID } from "node:crypto";
+-import { reportV4FailureDiagnostic, type V4FailureStage } from "./v4-post-dispatch-diagnostic.js";
++import { reportV4FailureDiagnostic, v4MediaTypeCategory, type V4FailureStage, type V4MediaTypeCategory } from "./v4-post-dispatch-diagnostic.js";
+ import {
+   assertHostedV4OneShotApproval,
+   type HostedV4OneShotApproval,
+@@ -158,6 +158,8 @@
+     const chunks: Buffer[] = [];
+     let failureStage: V4FailureStage = "begin-dispatch";
+     let upstreamStatus: number | undefined;
++    let bodyPresent: boolean | undefined;
++    let mediaTypeCategory: V4MediaTypeCategory | undefined;
+     try {
+       if (remainingMs <= 0) throw new Error("hosted_v4_scope_expired");
+       // Even an ambiguous transaction acknowledgement is not retried. The
+@@ -201,9 +203,16 @@
+           ?.toLowerCase()
+           .startsWith("text/event-stream")
+       ) {
++        // Guard already rejected. Metadata failure cannot make it succeed.
++        try {
++          bodyPresent = Boolean(upstream.body);
++          mediaTypeCategory = v4MediaTypeCategory(upstream.headers.get("content-type"));
++        } catch { /* Preserve UNKNOWN even when metadata is unavailable. */ }
+         await upstream.body?.cancel();
+         throw new Error("hosted_v4_upstream_outcome_uncertain");
+       }
++      bodyPresent = true;
++      mediaTypeCategory = "sse";
+       failureStage = "response-record";
+       await this.dependencies.turns.markDispatchResponseStarted(lease);
+       failureStage = "body-read";
+@@ -242,7 +251,8 @@
+       }
+     } catch (error) {
+       reportV4FailureDiagnostic(failureStage, error, input.abortSignal.aborted,
+-        heartbeatAbort.signal.aborted, upstreamStatus);
++        heartbeatAbort.signal.aborted, upstreamStatus, undefined,
++        { bodyPresent, composedSignalAborted: signal.aborted, mediaTypeCategory });
+       heartbeatAbort.abort();
+       await reader?.cancel().catch(() => undefined);
+       // Never turn a failed recovery write into permission to replay. The
+
+--- /private/tmp/rr-status-diagnostic-subject-NEWTEST-20261011/baseline/v4-post-dispatch-diagnostic.ts	2026-10-11 13:57:48
++++ /private/tmp/rr-status-diagnostic-subject-NEWTEST-20261011/src/v4-post-dispatch-diagnostic.ts	2026-10-11 13:57:48
+@@ -1,6 +1,20 @@
+ export type V4FailureStage =
+   | "begin-dispatch" | "fetch" | "status" | "response-record"
+   | "body-read" | "response-verify" | "response-complete";
++export type V4MediaTypeCategory = "sse" | "json" | "html" | "other" | "missing";
++export type V4StatusDiagnostic = Readonly<{
++  bodyPresent?: boolean;
++  composedSignalAborted?: boolean;
++  mediaTypeCategory?: V4MediaTypeCategory;
++}>;
++const mediaTypes = new Set(["sse", "json", "html", "other", "missing"]);
++/** Return a category only; no raw header value leaves this function. */
++export function v4MediaTypeCategory(value: unknown): V4MediaTypeCategory {
++  if (typeof value !== "string" || value.trim() === "") return "missing";
++  const type = value.split(";", 1)[0]!.trim().toLowerCase();
++  return type === "text/event-stream" ? "sse"
++    : type === "application/json" ? "json" : type === "text/html" ? "html" : "other";
++}
+ const names = new Set(["Error", "TypeError", "AbortError", "TimeoutError"]);
+ const codes = new Set([
+   "ECONNRESET", "ECONNREFUSED", "ETIMEDOUT", "ENOTFOUND", "EAI_AGAIN",
+@@ -16,9 +30,11 @@
+ function allowed(value: unknown, values: ReadonlySet<string>): string | null {
+   return typeof value === "string" && values.has(value) ? value : null;
+ }
+-/** Closed vocabulary only. Never inspect messages, bodies, headers, URLs or custody. */
++/** Closed vocabulary only. Never inspect messages, body bytes, raw headers, URLs or custody. */
+ export function v4FailureDiagnostic(stage: V4FailureStage, error: unknown,
+-  callerAborted: boolean, heartbeatAborted: boolean, upstreamStatus?: number) {
++  callerAborted: boolean, heartbeatAborted: boolean, upstreamStatus?: number,
++  status?: V4StatusDiagnostic) {
++  const bodyPresent = member(status, "bodyPresent");
+   return {
+     kind: "hosted_v4_one_shot_unknown",
+     stage,
+@@ -29,12 +45,15 @@
+     heartbeatAborted: heartbeatAborted === true,
+     upstreamStatus: Number.isInteger(upstreamStatus) && upstreamStatus! >= 100 && upstreamStatus! <= 599
+       ? upstreamStatus! : null,
++    bodyPresent: typeof bodyPresent === "boolean" ? bodyPresent : null,
++    composedSignalAborted: member(status, "composedSignalAborted") === true,
++    mediaTypeCategory: allowed(member(status, "mediaTypeCategory"), mediaTypes),
+   };
+ }
+ /** Reporting cannot change the original UNKNOWN finalization or authorize retry. */
+ export function reportV4FailureDiagnostic(stage: V4FailureStage, error: unknown,
+   callerAborted: boolean, heartbeatAborted: boolean, upstreamStatus?: number,
+-  sink = (line: string) => console.error(line)): void {
+-  try { sink(JSON.stringify(v4FailureDiagnostic(stage, error, callerAborted, heartbeatAborted, upstreamStatus))); }
++  sink = (line: string) => console.error(line), status?: V4StatusDiagnostic): void {
++  try { sink(JSON.stringify(v4FailureDiagnostic(stage, error, callerAborted, heartbeatAborted, upstreamStatus, status))); }
+   catch { /* Preserve the original catch path even when reporting fails. */ }
+ }
